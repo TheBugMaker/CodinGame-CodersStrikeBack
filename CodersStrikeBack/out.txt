@@ -1,0 +1,239 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CodersStrikeBack
+{
+    class CheckP
+    {
+        public Position p;
+        public int num;
+        public CheckP(int num , int x , int y)
+        {
+            this.num = num;
+            this.p = new Position(x, y);
+        }
+    }
+}
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CodersStrikeBack
+{
+    class Game
+    {
+        public  int tlap ;
+        public  int lapCount;
+        public int numCheck;
+        public List<CheckP> checkPs = new List<CheckP>(); 
+        public Game(int tlap) {
+            this.tlap = tlap;
+            lapCount = 0; 
+        }
+
+    }
+}
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CodersStrikeBack
+{
+    class Pod
+    {
+        public Position p;
+        public Position des;
+        public int acc;
+        public bool shield= false ;
+        public CheckP nextC ;
+        public Speed speed;
+        public int ang;
+
+
+        public Pod(int x , int y)
+        {
+            p = new Position(x,y);
+   
+        }
+
+        public void SetP(int x, int y)
+        {
+            p.x = x;
+            p.y = y; 
+        }
+    }
+}
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CodersStrikeBack
+{
+    class Pods
+    {
+        public List<Pod> meP = new List<Pod>(2);
+        public List<Pod> enP = new List<Pod>(2);
+        public List<CheckP> checkPs; 
+
+        public Pods()
+        {
+            meP.Add(new Pod(0, 0));
+            meP.Add(new Pod(0, 0));
+            enP.Add(new Pod(0, 0));
+            enP.Add(new Pod(0, 0));
+        }
+
+        public void SetP(int i  , int x, int y){
+            if (i < 2)
+            {
+                meP.ElementAt<Pod>(i).SetP(x, y);
+            }
+            else
+            {
+                enP.ElementAt<Pod>(i-2).SetP(x, y); 
+            }
+        }
+
+        public Pod getP(int i)
+        {
+            if (i < 2)
+            {
+                return meP.ElementAt<Pod>(i);
+            }
+            else
+            {
+                return enP.ElementAt<Pod>(i-2);
+            }
+        }
+    }
+}
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CodersStrikeBack
+{
+    class Position
+    {
+        public int x;
+        public int y;
+
+        public Position(int x, int y)
+        {
+            this.x = x;
+            this.y = y; 
+        }
+    }
+}
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CodersStrikeBack
+{
+   
+    class Player
+    {
+        static void Main(string[] args)
+        {
+            
+
+            string[] inputs;
+            int laps = int.Parse(Console.ReadLine());
+            
+            Game g = new Game(laps);
+            Pods ps = new Pods();
+
+            int checkpointCount = int.Parse(Console.ReadLine());
+            for (int i = 0; i < checkpointCount; i++)
+            {
+                inputs = Console.ReadLine().Split(' ');
+                int checkpointX = int.Parse(inputs[0]);
+                int checkpointY = int.Parse(inputs[1]);
+                
+                g.checkPs.Add(new CheckP(i, checkpointX, checkpointY)); 
+            }
+            ps.checkPs = g.checkPs; 
+
+            // game loop
+            while (true)
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    inputs = Console.ReadLine().Split(' ');
+                    int x = int.Parse(inputs[0]);
+                    int y = int.Parse(inputs[1]);
+
+                    ps.SetP(i, x, y); 
+
+                    int vx = int.Parse(inputs[2]);
+                    int vy = int.Parse(inputs[3]);
+
+                    ps.getP(i).speed = new Speed(vx,vy);
+
+                    int angle = int.Parse(inputs[4]);
+
+                    ps.getP(i).ang = angle; 
+
+                    int nextCheckPointId = int.Parse(inputs[5]);
+
+                    ps.getP(i).nextC = g.checkPs.ElementAt(nextCheckPointId); 
+
+                }
+                for (int i = 0; i < 2; i++)
+                {
+                    inputs = Console.ReadLine().Split(' ');
+                    int x = int.Parse(inputs[0]);
+                    int y = int.Parse(inputs[1]);
+
+                    ps.SetP(i+2, x, y);
+
+                    int vx = int.Parse(inputs[2]);
+                    int vy = int.Parse(inputs[3]);
+
+                    ps.getP(i+2).speed = new Speed(vx, vy);
+
+                    int angle = int.Parse(inputs[4]);
+
+                    ps.getP(i+2).ang = angle;
+
+                    int nextCheckPointId = int.Parse(inputs[5]);
+
+                    ps.getP(i+2).nextC = g.checkPs.ElementAt(nextCheckPointId); 
+
+                }
+
+                // Write an action using Console.WriteLine()
+                // To debug: Console.Error.WriteLine("Debug messages...");
+
+                Console.WriteLine("8000 4500 100");
+                Console.WriteLine("8000 4500 100");
+            }
+        }
+    }
+}
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CodersStrikeBack
+{
+    class Speed
+    {
+        public int x ;
+        public int y;
+        public Speed(int x, int y)
+        {
+            this.x = x;
+            this.y = y; 
+        }
+    }
+}

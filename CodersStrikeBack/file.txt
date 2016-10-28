@@ -1,0 +1,537 @@
+                // using 16516 
+                // using 
+using System.Text;
+using System.Linq;
+using System.Collections.Generic;
+using System;
+
+namespace CodersStrikeBack
+{
+    public class Cercle
+    {
+        public Position c;
+        public int rad;
+
+        public Cercle(Position p1 , Position p2 , Position p3)
+        {
+          
+        }
+
+    }
+}
+
+namespace CodersStrikeBack
+{
+    public class CheckP
+    {
+        public Position p;
+        public int num;
+        public CheckP(int num , int x , int y)
+        {
+            this.num = num;
+            this.p = new Position(x, y);
+        }
+    }
+}
+
+namespace CodersStrikeBack
+{
+   public  class Game
+    {
+        public static  int tlap ;
+        public  static int lapCount;
+        public static  List<CheckP> checkPs = new List<CheckP>();
+        public static  CheckP getNext(int num)
+        {
+            return checkPs.ElementAt((num + 1) % checkPs.Count() ); 
+        }  
+
+    }
+}
+
+namespace CodersStrikeBack
+{
+    public static class Motion
+    {
+      
+
+        public static bool testGlide(this Pod p, Position z , int turnsStop , int range)
+        {
+            double xs = p.speed.x , ys =  p.speed.y ;   
+            double x = p.p.x , y = p.p.y ;
+
+
+            if (turnsStop == 0) return false;
+              for (int i = 0; i < turnsStop; i++)
+			    {   
+                     x+=xs ; y+=ys ;   
+			         xs = xs * 0.85 ; ys = ys *0.85  ;    
+			    }  
+                if(new Position((int)x,(int)y).equal(z , range)){
+                    return true  ; 
+              
+                }
+
+                return false;
+        }
+
+     
+
+    }
+}
+
+namespace CodersStrikeBack
+{
+    public class Pod
+    {
+        public Position p;
+        public Position des;
+        public int acc;
+        public int shield= 5 ;
+        public CheckP nextC;
+        public CheckP nNextC;
+        public Speed speed;
+        public int ang = 0;
+        public bool inPosition = false;
+        public bool gettingInPos = false;
+        int prog = 0;
+        public CheckP target; 
+        public bool direct = false  ;
+        public int testGlid = 5;
+        public bool isFirst = false;
+        public bool kickStart = false ;
+        public bool goKick = false;
+        
+       
+        public Pod(int x , int y)
+        {
+            p = new Position(x,y);
+   
+        }
+
+        public int gettingThere(Position p1){
+            double x = p1.x - p.x, y = p1.y - p.y;
+            var k =  (x * this.speed.x + y * this.speed.y);
+           
+            k = k / ( Math.Sqrt(x*x + y*y) * Math.Sqrt(speed.x*speed.x + speed.y*speed.y) ) ;
+   
+            return (int)( Math.Acos(k) * 180.0 / Math.PI) ;
+
+        }
+        public void SetC(CheckP c)
+        {
+            if (this.nextC == null || this.nextC.num != c.num)
+            {
+                nextC = c;
+                nNextC = Game.checkPs.ElementAt((c.num + 1) % Game.checkPs.Count()); 
+                prog++;
+                if (nextC.num == 1 && isFirst ) Game.tlap-- ; 
+
+                if(prog>1)kickStart = true;
+            }
+        }
+
+        public bool colide(Pod po)
+        {
+            Position p1 = new Position(this.p.x + this.speed.x, this.p.y + this.speed.y);
+            Position p2 = new Position(po.p.x + po.speed.x, po.p.y + po.speed.y);
+
+            return p1.getDistance(p2) < 850;  
+
+        }
+
+        public Position getNext()
+        {
+            return new Position(p.x + speed.x, p.y + speed.y); 
+        }
+       
+
+        public void SetP(int x, int y)
+        {
+            p.x = x;
+            p.y = y; 
+        }
+
+        public void Action(int type)
+        {
+            if (type == 0)
+            {
+                isFirst = true;
+            }
+            String pr = nextC.p.x + " " + nextC.p.y;
+            String act = "";
+            int dis = this.p.getDistance(nextC.p);
+            var targAng = gettingThere(nextC.p); 
+            var speed = (gettingThere(nextC.p) / 180.0); 
+
+            switch (type)
+            {   
+                    // Racer
+                case 0 :
+                    Console.Error.WriteLine("Speed id " + this.speed.getSpeed());
+
+                    int turn = (this.speed.getSpeed() / 80);
+                    turn = Math.Min(turn, 4);
+                    if (this.testGlide(nextC.p, turn, 600) && gettingThere(nNextC.p) > 90 && (Game.tlap > 0 || nextC.num != 0 )  )
+                    {
+                        pr = nNextC.p.x + " " + nNextC.p.y;
+                        act = this.testGlide(nextC.p, 1, 450)?"50":"1";
+                        Console.Error.WriteLine("GLIDING !!");
+                    }
+                    else
+                    {
+                    
+                      
+                     int print = (int) (200 - speed*200);
+                  
+
+                     
+                     if (targAng > 120 && dis < 1500)
+                     {
+                         print = 5 ;
+                         Console.Error.WriteLine(" POSITIONING");
+                     }
+                     else if (targAng > 18 && getNext().getDistance(nextC.p) < 3000)
+                     {
+                         print = print / 2;
+                         Console.Error.WriteLine("BRAKING /2");
+                     }
+                     
+                      
+                     
+                     act = print + ""; 
+                    }
+                    if (Pods.HitEn(this) || Pods.meP.ElementAt(1).getNext().equal(getNext() , 800)  && shield <= 0  )
+                    {
+                        shield = 5;
+                        act = "SHIELD";
+                    }
+                    else
+                    {
+                        shield -- ; 
+                    }
+                    act = (kickStart)? act + " KICK ME" : act;
+                    Console.WriteLine(pr + " "+act);
+                    break; 
+                    // BLOCKER 
+                case 1 :
+                     
+                     Pod en ;
+                     en = (Pods.enP.ElementAt(0).prog > Pods.enP.ElementAt(1).prog ||( Pods.enP.ElementAt(0).prog == Pods.enP.ElementAt(1).prog && Pods.enP.ElementAt(0).p.getDistance(this.p) < Pods.enP.ElementAt(1).p.getDistance(this.p))) ? Pods.enP.ElementAt(0) : Pods.enP.ElementAt(1);
+                     Pod frd =Pods.meP.ElementAt(0) ;
+                     if (goKick == true && frd.kickStart && p.getDistance(frd.p) < 1500 && Game.getNext(target.num).num == frd.nextC.num && p.getDistance(target.p) > 400) 
+                     {
+                         pr = frd.p.x + " " + frd.p.y;
+                         act = ""+200;
+                     }
+                     else
+                     {
+                         if (!gettingInPos)
+                         {
+                             target = Game.checkPs.ElementAt((en.nextC.num + 2) % Game.checkPs.Count);
+                             gettingInPos = true;
+                         }
+
+
+                         // Ready to Attack 
+                         if (en.nextC.num == target.num && en.getNext().getDistance(this.p) < 5000)
+                         {
+                             if (!en.getNext().equal(getNext(), 900))
+                             {    // ATTACK !! 
+                                 act = 200 + "";
+                                 pr = en.getNext().x + " " + en.getNext().y;
+
+                             }
+                             else
+                             {
+                                 act = "SHIELD";
+                                 pr = en.p.x + " " + en.p.y;
+
+                             }
+
+                         }
+                         else
+                         {
+
+                             if (this.testGlide(Game.getNext(target.num).p.getOuter(target.p.x, target.p.y, 400), 4 , 600))
+                             {
+                                 act = " 1";
+                                 pr = en.p.x + " " + en.p.y;
+                                 goKick = true;
+                             }
+                             else
+                             {
+                                 if (this.p.equal(target.p, 2000))
+                                 {
+                                     act = "10";
+                                 }
+                                 else
+                                 {
+                                     act = "90";
+                                 }
+
+
+                                 pr = target.p.x + " " + target.p.y;
+                             }
+
+
+
+
+                         }
+                     }
+                     if (frd.kickStart && getNext().equal(frd.getNext(), 800))
+                     {
+                        // act = "SHIELD GO GO ";
+                         frd.kickStart = false;
+                         goKick = false;
+                     }    
+                     if (Pods.HitEn(this)){
+                         act = "SHIELD ATTACK!";
+                         goKick = false ;
+                     };   
+                     Console.WriteLine(pr + " " + act);
+                     if (((target.num + 1) % Game.checkPs.Count) == en.nextC.num)
+                     {
+                         gettingInPos = false;
+                         direct = false;
+                     } 
+
+                    break; 
+            }
+                
+        }
+    }
+}
+
+namespace CodersStrikeBack
+{
+    public class Pods
+    {
+        public static  List<Pod> meP = new List<Pod>(2);
+        public static List<Pod> enP = new List<Pod>(2);
+        public List<CheckP> checkPs; 
+
+        public Pods()
+        {
+            meP.Add(new Pod(0, 0));
+            meP.Add(new Pod(0, 0));
+            enP.Add(new Pod(0, 0));
+            enP.Add(new Pod(0, 0));
+        }
+
+        public void SetP(int i  , int x, int y){
+            if (i < 2)
+            {
+                meP.ElementAt<Pod>(i).SetP(x, y);
+            }
+            else
+            {
+                enP.ElementAt<Pod>(i-2).SetP(x, y); 
+            }
+        }
+
+        public Pod getP(int i)
+        {
+            if (i < 2)
+            {
+                return meP.ElementAt<Pod>(i);
+            }
+            else
+            {
+                return enP.ElementAt<Pod>(i-2);
+            }
+        }
+
+        public static bool HitEn(Pod p)
+        {
+            foreach (var q in enP)
+            {
+                if (p.getNext().equal(q.getNext() , 850)) return true; 
+            }
+            return false;
+        }
+    }
+}
+
+namespace CodersStrikeBack
+{
+    public class Position
+    {
+        public int x;
+        public int y;
+
+        public Position(int x, int y)
+        {
+            this.x = x;
+            this.y = y; 
+        }
+
+        public double getAngle(Position p){
+            long x = p.x - this.x , y = p.y-this.y;
+            double ang =  Math.Acos( y / Math.Sqrt(x*x+y*y)) * 180 / Math.PI;
+            if(y>0) ang = 360 - ang;
+            return ang;
+        }
+
+        public int getDistance(Position p)
+        {
+            int x = this.x - p.x;
+            int y = this.y - p.y;
+            return  (int)(Math.Sqrt(x * x + y * y));  
+
+        }
+
+        public bool equal(Position k)
+        {
+            return this.x == k.x && this.y == k.y; 
+        }
+
+        public bool equal(Position k, int marg)
+        {
+            return Math.Abs(this.x - k.x) < marg && Math.Abs(this.y - k.y) < marg; 
+        }
+
+        public Position getOuter( int margin, int x, int y)
+        {
+            var k = this;
+            int nx = k.x;
+            int ny = k.y; 
+            if ( k.x > x)
+            {
+                nx -= margin;
+            }
+            else
+            {
+                nx += margin;
+            }
+
+            if (k.y > y)
+            {
+                ny -= margin;
+            }
+            else
+            {
+                ny += margin; 
+            }
+            return new Position(nx, ny);
+        }
+    }
+}
+
+namespace CodersStrikeBack
+{
+   
+    class Player
+    {
+        static void Main(string[] args)
+        {
+             
+            #region init
+            string[] inputs;
+            int laps = int.Parse(Console.ReadLine());
+            
+            Game.tlap= (laps);
+            Pods ps = new Pods();
+
+            int checkpointCount = int.Parse(Console.ReadLine());
+            for (int i = 0; i < checkpointCount; i++)
+            {
+                inputs = Console.ReadLine().Split(' ');
+                int checkpointX = int.Parse(inputs[0]);
+                int checkpointY = int.Parse(inputs[1]);
+                
+                Game.checkPs.Add(new CheckP(i, checkpointX, checkpointY)); 
+            }
+            ps.checkPs = Game.checkPs; 
+        #endregion
+
+            // game loop
+            while (true)
+            {
+                Console.Error.WriteLine(Game.tlap);
+                #region setUp
+                for (int i = 0; i < 2; i++)
+                {
+                    inputs = Console.ReadLine().Split(' ');
+                    int x = int.Parse(inputs[0]);
+                    int y = int.Parse(inputs[1]);
+
+                    ps.SetP(i, x, y); 
+
+                    int vx = int.Parse(inputs[2]);
+                    int vy = int.Parse(inputs[3]);
+
+                    ps.getP(i).speed = new Speed(vx,vy);
+
+                    int angle = int.Parse(inputs[4]);
+
+                    ps.getP(i).ang = Math.Max(0,angle); 
+
+                    int nextCheckPointId = int.Parse(inputs[5]);
+
+                    ps.getP(i).SetC( Game.checkPs.ElementAt(nextCheckPointId) ); 
+
+                }
+                for (int i = 0; i < 2; i++)
+                {
+                    inputs = Console.ReadLine().Split(' ');
+                    int x = int.Parse(inputs[0]);
+                    int y = int.Parse(inputs[1]);
+
+                    ps.SetP(i+2, x, y);
+
+                    int vx = int.Parse(inputs[2]);
+                    int vy = int.Parse(inputs[3]);
+
+                    ps.getP(i+2).speed = new Speed(vx, vy);
+
+                    int angle = int.Parse(inputs[4]);
+
+                    ps.getP(i+2).ang = angle;
+
+                    int nextCheckPointId = int.Parse(inputs[5]);
+
+                    ps.getP(i+2).SetC( Game.checkPs.ElementAt(nextCheckPointId) ) ;
+
+                }
+            #endregion
+
+                // To debug: Console.Error.WriteLine("Debug messages...");
+                Pods.meP.ElementAt(0).Action(0);
+                Pods.meP.ElementAt(1).Action(1); 
+            }
+        }
+    }
+}
+
+namespace CodersStrikeBack
+{
+    public class Speed
+    {
+        public int x ;
+        public int y;
+        public Speed(int x, int y)
+        {
+            this.x = x;
+            this.y = y; 
+        }
+
+        public void applyFric(){
+            this.x = (int) (x*0.85) ; 
+            this.y = (int) (y*0.85) ; 
+        }
+
+        public int getSpeed()
+        {
+            return (int)Math.Sqrt(x * x + y * y); 
+        }
+    }
+}
+
+namespace CodersStrikeBack
+{
+    public class strat
+    {
+   
+    }
+}
